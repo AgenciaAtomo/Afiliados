@@ -12,5 +12,18 @@
  };
  const nativeFetch=window.fetch.bind(window);window.fetch=(input,options)=>{if(typeof input==='string'||input instanceof URL)return nativeFetch(map(String(input)),options);return nativeFetch(new Request(map(input.url),input),options)};
  document.addEventListener('click',event=>{const button=event.target.closest('button');if(button?.textContent.trim()==='Sair'){const token=localStorage.getItem('token');if(token)void nativeFetch('/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token},keepalive:true}).catch(()=>{});}},true);
- document.addEventListener('DOMContentLoaded',()=>{const a=document.createElement('a');a.className='demo-label';a.href='/operations.html';a.textContent='WhatsApp • envios e grupos';a.title='Gerenciar grupos, compor mensagens e acompanhar a fila';document.body.append(a)});
+ // Billing belongs to the original SaaS, not to this privately hosted application.
+ const billingPaths=new Set(['/plans','/subscription','/redeem-code']);
+ function cleanBilling(){
+  if(billingPaths.has(location.pathname)){location.replace('/dashboard');return;}
+  document.querySelectorAll('a,button').forEach(n=>{
+   const href=n.getAttribute('href')||'',label=n.textContent.trim();
+   const billingLink=billingPaths.has(href.split('?')[0])||href.includes('/indique-ganhe/');
+   const billingAction=/^(ver planos|contratar plano|assinar|assine agora|fazer upgrade|resgatar código|indique e ganhe)$/i.test(label);
+   const billingTutorial=n.tagName==='BUTTON'&&/assista|veja na prática/i.test(label)&&/planos|teste gratuito/i.test(label);
+   if(billingLink||billingAction||billingTutorial)n.style.display='none';
+  });
+ }
+ document.addEventListener('DOMContentLoaded',()=>{cleanBilling();new MutationObserver(cleanBilling).observe(document.body,{childList:true,subtree:true,characterData:true});});
+ window.addEventListener('popstate',cleanBilling);
 })();
